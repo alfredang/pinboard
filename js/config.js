@@ -1,22 +1,15 @@
 /**
  * config.js — Firebase configuration for Pinboard real-time collaboration
- *
- * HOW TO SET UP:
- * 1. Go to https://console.firebase.google.com
- * 2. Create a new project (free Spark plan works great)
- * 3. Add a Web App → copy your config values below
- * 4. In Firebase Console → Realtime Database → Create database → Start in test mode
- * 5. Push this file to GitHub and you're live!
  */
 
 const FIREBASE_CONFIG = {
-  apiKey:            "YOUR_API_KEY",
-  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
-  databaseURL:       "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-  projectId:         "YOUR_PROJECT_ID",
-  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId:             "YOUR_APP_ID"
+  apiKey:            "AIzaSyBGQ_GqDfyaHsL3a4Oe1cKI297mfWobO1s",
+  authDomain:        "pinboard-c06ce.firebaseapp.com",
+  databaseURL:       "https://pinboard-c06ce-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "pinboard-c06ce",
+  storageBucket:     "pinboard-c06ce.firebasestorage.app",
+  messagingSenderId: "345215113896",
+  appId:             "1:345215113896:web:576de615fd07688f5b409d"
 };
 
 // Set to false to disable real-time sync (local-only mode)
