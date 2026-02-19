@@ -6,7 +6,6 @@
 const Sync = {
   db: null,
   roomRef: null,
-  presenceRef: null,
   sessionId: null,
   currentRoomCode: null,
   isHost: false,
@@ -18,13 +17,16 @@ const Sync = {
   async init() {
     if (!SYNC_ENABLED) return false;
     try {
-      firebase.initializeApp(FIREBASE_CONFIG);
+      // Guard against double-init (e.g. soft reloads)
+      if (!firebase.apps.length) {
+        firebase.initializeApp(FIREBASE_CONFIG);
+      }
       this.db = firebase.database();
-      this.sessionId = Storage.uid();
-      console.log('[Sync] Firebase initialized, sessionId:', this.sessionId);
+      this.sessionId = this.sessionId || Storage.uid();
+      console.log('[Sync] Firebase ready, session:', this.sessionId);
       return true;
     } catch (e) {
-      console.warn('[Sync] Firebase init failed:', e);
+      console.error('[Sync] Firebase init failed:', e);
       return false;
     }
   },
@@ -32,7 +34,10 @@ const Sync = {
   // ── Host: Create a room ───────────────────────────────
 
   async createRoom(board) {
-    if (!this.db) return null;
+    if (!this.db) {
+      console.error('[Sync] db is null — Firebase not initialized');
+      return null;
+    }
     const code = this._genCode();
     this.currentRoomCode = code;
     this.isHost = true;
@@ -46,31 +51,46 @@ const Sync = {
       updatedAt: firebase.database.ServerValue.TIMESTAMP
     };
 
-    await this.db.ref(`rooms/${code}`).set(roomData);
-    this.roomRef = this.db.ref(`rooms/${code}`);
-    this._listenPresence(code);
-    this._listenBoardChanges(code);
-    return code;
+    try {
+      await this.db.ref(`rooms/${code}`).set(roomData);
+      this.roomRef = this.db.ref(`rooms/${code}`);
+      this._listenPresence(code);
+      this._listenBoardChanges(code);
+      return code;
+    } catch (e) {
+      console.error('[Sync] createRoom failed:', e);
+      return null;
+    }
   },
 
   // ── Guest: Join a room ────────────────────────────────
 
   async joinRoom(code) {
-    if (!this.db) return null;
-    const snap = await this.db.ref(`rooms/${code}`).once('value');
-    if (!snap.exists()) return null;
-
-    const roomData = snap.val();
-    this.currentRoomCode = code;
-    this.isHost = false;
-    this.roomRef = this.db.ref(`rooms/${code}`);
-    this._listenPresence(code);
-    this._listenBoardChanges(code);
-    this._announcePresence(code);
-    return roomData.board;
+    if (!this.db) {
+      console.error('[Sync] db is null — Firebase not initialized');
+      return null;
+    }
+    try {
+      const snap = await this.db.ref(`rooms/${code}`).once('value');
+      if (!snap.exists()) {
+        console.warn('[Sync] Room not found:', code);
+        return null;
+      }
+      const roomData = snap.val();
+      this.currentRoomCode = code;
+      this.isHost = false;
+      this.roomRef = this.db.ref(`rooms/${code}`);
+      this._listenPresence(code);
+      this._listenBoardChanges(code);
+      this._announcePresence(code);
+      return roomData.board;
+    } catch (e) {
+      console.error('[Sync] joinRoom failed:', e);
+      return null;
+    }
   },
 
-  // ── Push board update (host & guest) ─────────────────
+  // ── Push board update ─────────────────────────────────
 
   async pushUpdate(board) {
     if (!this.roomRef) return;
@@ -91,7 +111,6 @@ const Sync = {
     this.db.ref(`rooms/${code}/board`).on('value', (snap) => {
       if (!snap.exists()) return;
       const boardData = snap.val();
-      // Ignore our own updates
       if (boardData._lastEditBy === this.sessionId) return;
       if (this.onUpdateCallback) this.onUpdateCallback(boardData);
     });
@@ -117,10 +136,12 @@ const Sync = {
   // ── Leave room ────────────────────────────────────────
 
   async leaveRoom() {
-    if (!this.roomRef || !this.currentRoomCode) return;
-    await this.db.ref(`rooms/${this.currentRoomCode}/presence/${this.sessionId}`).remove();
-    this.db.ref(`rooms/${this.currentRoomCode}/board`).off();
-    this.db.ref(`rooms/${this.currentRoomCode}/presence`).off();
+    if (!this.db || !this.currentRoomCode) return;
+    try {
+      await this.db.ref(`rooms/${this.currentRoomCode}/presence/${this.sessionId}`).remove();
+      this.db.ref(`rooms/${this.currentRoomCode}/board`).off();
+      this.db.ref(`rooms/${this.currentRoomCode}/presence`).off();
+    } catch (e) {}
     this.roomRef = null;
     this.currentRoomCode = null;
     this.isHost = false;

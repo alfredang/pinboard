@@ -224,7 +224,12 @@ const App = {
     document.getElementById('confirmJoin').onclick = async () => {
       const code = document.getElementById('joinCode').value.trim();
       if (code.length !== 6) return;
+      const btn = document.getElementById('confirmJoin');
+      btn.textContent = 'Joining…';
+      btn.disabled = true;
       await this.joinRoomByCode(code);
+      btn.textContent = 'Join Board';
+      btn.disabled = false;
     };
 
     document.getElementById('joinCode').addEventListener('keydown', (e) => {
@@ -245,9 +250,13 @@ const App = {
   },
 
   async joinRoomByCode(code) {
-    if (!SYNC_ENABLED) {
-      alert('Live sync requires Firebase setup. See js/config.js.');
-      return;
+    if (!SYNC_ENABLED || !Sync.db) {
+      // Try re-initializing Firebase in case it failed silently
+      const ok = await Sync.init();
+      if (!ok || !Sync.db) {
+        alert('Firebase not connected. Check console for errors.');
+        return;
+      }
     }
     document.getElementById('joinModal').style.display = 'none';
     document.getElementById('joinError').style.display = 'none';
