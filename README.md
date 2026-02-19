@@ -1,52 +1,110 @@
-# 🟩 Pinboard — Digital Canvas
+<div align="center">
 
-[![GitHub Pages](https://img.shields.io/badge/demo-live-brightgreen?style=for-the-badge&logo=github)](https://alfredang.github.io/pinboard/)
-[![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
-[![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/CSS)
-[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
+# 📌 Pinboard
 
-A Padlet-inspired digital canvas web app for whiteboards, lessons, and collaborative activities. Built with pure HTML, CSS, and JavaScript — zero dependencies, zero build tools.
+[![GitHub Pages](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-brightgreen?logo=github&logoColor=white)](https://alfredang.github.io/pinboard/)
+[![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
+[![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/CSS)
+[![JavaScript](https://img.shields.io/badge/JavaScript-ES2024-F7DF1E?logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
+[![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI/CD-2088FF?logo=github-actions&logoColor=white)](https://github.com/alfredang/pinboard/actions)
 
----
+**A Padlet-inspired digital canvas for sticky notes, whiteboards, and collaborative activities.**
 
-## ✨ Features
+[Live Demo](https://alfredang.github.io/pinboard/) · [Report Bug](https://github.com/alfredang/pinboard/issues) · [Request Feature](https://github.com/alfredang/pinboard/issues)
 
-- **Multiple Boards** — Create, name, and manage unlimited boards
-- **Drag & Drop Posts** — Freely move sticky notes around the canvas
-- **3 Layout Modes** — Free (drag anywhere), Grid, and List
-- **Colorful Sticky Notes** — 7 pastel color options per post
-- **Board Backgrounds** — 7 background options including dot and grid patterns
-- **Persistent Storage** — Everything saved to local storage, survives refreshes
-- **Touch Support** — Works on mobile and tablet
-- **Board Preview Cards** — See mini-previews of all your boards at a glance
-- **Edit & Delete** — Update or remove any post at any time
+</div>
 
 ---
 
-## 🕹️ How to Use
+## Screenshot
 
-1. **Create a board** — Click "Make a board" or "+ New Board"
-2. **Choose a layout** — Free (drag anywhere), Grid, or List
-3. **Add posts** — Click "+ Add Post", write content, pick a color
-4. **Move posts** — Drag them anywhere on the canvas (Free layout)
-5. **Edit posts** — Hover over a post and click ✏️ Edit
-6. **Change background** — Click 🎨 in the toolbar
+<!-- Add a screenshot of your app here -->
+<!-- ![Screenshot](screenshot.png) -->
+
+> 🌐 **[Try it live →](https://alfredang.github.io/pinboard/)**
 
 ---
 
-## 📁 File Structure
+## About
+
+**Pinboard** is a modern, lightweight clone of [Padlet](https://padlet.com) — a digital canvas that lets you post sticky notes, organize ideas, and build visual whiteboards. It runs entirely in the browser with **zero dependencies**, **no backend**, and **no build tools** required.
+
+### ✨ Features
+
+| Feature | Description |
+|---------|-------------|
+| 🗂 **Multiple Boards** | Create, name, and manage unlimited boards |
+| 🖱 **Drag & Drop** | Freely move sticky notes around the canvas |
+| 🎨 **Colorful Posts** | 7 pastel color options per sticky note |
+| 🖼 **Board Backgrounds** | Solid colors, dot grid, and line grid patterns |
+| 📐 **3 Layout Modes** | Free (drag anywhere), Grid, and List |
+| 💾 **Auto-Save** | All boards and posts persist via local storage |
+| 📱 **Mobile Ready** | Touch drag-and-drop, fully responsive |
+| ✏️ **Edit & Delete** | Update or remove any post at any time |
+| 👁 **Board Previews** | Mini-preview cards on the home screen |
+
+---
+
+## Tech Stack
+
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-ES2024-F7DF1E?logo=javascript&logoColor=black)
+![LocalStorage](https://img.shields.io/badge/Storage-LocalStorage-orange?logo=databricks&logoColor=white)
+![GitHub Pages](https://img.shields.io/badge/Hosting-GitHub%20Pages-181717?logo=github&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/CI/CD-GitHub%20Actions-2088FF?logo=github-actions&logoColor=white)
+
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | HTML5, CSS3, Vanilla JavaScript (ES6+) |
+| **Storage** | Browser LocalStorage API |
+| **Layout** | CSS Grid, Flexbox |
+| **Animations** | CSS Keyframes, Transitions |
+| **CI/CD** | GitHub Actions |
+| **Hosting** | GitHub Pages |
+
+**Zero dependencies. No frameworks. No build step.**
+
+---
+
+## Architecture
+
+```mermaid
+graph TB
+    User["👤 User (Browser)"]
+    UI["🖥 index.html<br/>App Shell + Modals"]
+    App["⚙️ app.js<br/>Controller & Event Bindings"]
+    Board["📋 board.js<br/>Board Management"]
+    Post["📌 post.js<br/>Post Rendering & Drag-Drop"]
+    Store["💾 storage.js<br/>LocalStorage CRUD"]
+    CSS["🎨 style.css<br/>UI, Animations, Responsive"]
+    LS[("🗄 LocalStorage<br/>Boards & Posts")]
+
+    User -->|"interacts"| UI
+    UI --> App
+    App --> Board
+    App --> Post
+    Board --> Store
+    Post --> Store
+    Store <--> LS
+    UI --> CSS
+```
+
+---
+
+## Project Structure
 
 ```
-padlet-clone/
-├── index.html                  # App shell and modals
+pinboard/
+├── index.html                  # App shell, modals, toolbar
 ├── css/
-│   └── style.css               # All UI styles, animations, responsive design
+│   └── style.css               # All UI styles, animations, responsive
 ├── js/
 │   ├── storage.js              # LocalStorage CRUD helpers
 │   ├── board.js                # Board creation, rendering, management
 │   ├── post.js                 # Post creation, drag-and-drop, rendering
-│   └── app.js                  # Main app controller, event bindings
+│   └── app.js                  # Main controller, event bindings
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml          # GitHub Actions → GitHub Pages CI/CD
@@ -56,40 +114,109 @@ padlet-clone/
 
 ---
 
-## 🚀 Tech Stack
+## Getting Started
 
-| Technology | Purpose |
-|------------|---------|
-| **HTML5** | Semantic app shell, modals, toolbar |
-| **CSS3** | Grid layouts, animations, responsive design |
-| **JavaScript (ES6+)** | Drag & drop, localStorage, dynamic rendering |
-| **GitHub Actions** | Automated deployment to GitHub Pages |
-| **GitHub Pages** | Free static hosting |
+### Prerequisites
 
-**Zero dependencies. No frameworks. No build step.**
+- Any modern web browser (Chrome, Firefox, Safari, Edge)
+- Git (for cloning)
+- Optional: `python3` or any static file server for local dev
 
----
-
-## 🛠️ Local Development
+### Installation
 
 ```bash
-git clone https://github.com/alfredang/padlet-clone.git
-cd padlet-clone
-open index.html  # or python3 -m http.server 8080
+# 1. Clone the repository
+git clone https://github.com/alfredang/pinboard.git
+cd pinboard
+
+# 2. Open directly in browser
+open index.html
+
+# OR serve locally
+python3 -m http.server 8080
+# Then visit http://localhost:8080
 ```
 
----
-
-## 🤖 Acknowledgements
-
-Built with **[OpenClaw](https://openclaw.ai)** — an AI-powered personal agent platform.
-
-- 🌐 [openclaw.ai](https://openclaw.ai)
-- 📖 [Docs](https://docs.openclaw.ai)
-- 💬 [Discord](https://discord.com/invite/clawd)
+No `npm install`. No `.env`. Just open and go.
 
 ---
 
-## 📄 License
+## Usage
 
-MIT
+1. **Create a board** — Click **"Make a board"** or **"+ New Board"**
+2. **Choose a layout** — Free (drag anywhere), Grid, or List
+3. **Add posts** — Click **"+ Add Post"**, write content, pick a color
+4. **Drag posts** — Click and drag any post to reposition (Free layout)
+5. **Edit posts** — Hover a post → click ✏️ Edit
+6. **Change background** — Click 🎨 in the board toolbar
+
+---
+
+## Deployment
+
+### GitHub Pages (current)
+
+Automatically deploys via GitHub Actions on every push to `main`.
+
+```yaml
+# .github/workflows/deploy.yml
+on:
+  push:
+    branches: [main]
+```
+
+### Self-hosted / Docker
+
+```dockerfile
+# Simple nginx serve
+FROM nginx:alpine
+COPY . /usr/share/nginx/html
+EXPOSE 80
+```
+
+```bash
+docker build -t pinboard .
+docker run -p 8080:80 pinboard
+# Visit http://localhost:8080
+```
+
+### Any Static Host
+
+Upload the entire repo folder to:
+- **Netlify** — drag & drop the folder
+- **Vercel** — `vercel deploy`
+- **Cloudflare Pages** — connect the repo
+
+---
+
+## Contributing
+
+Contributions are welcome!
+
+1. Fork the repository
+2. Create your feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m 'feat: add your feature'`
+4. Push to the branch: `git push origin feature/your-feature`
+5. Open a Pull Request
+
+---
+
+## License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+---
+
+## Acknowledgements
+
+- Inspired by [Padlet](https://padlet.com) — the original digital canvas
+- Built with ❤️ using [OpenClaw](https://openclaw.ai) — AI-powered personal agent platform
+- Deployed via [GitHub Pages](https://pages.github.com/)
+
+<div align="center">
+
+⭐ **Star this repo if you found it useful!**
+
+Built with [OpenClaw](https://openclaw.ai)
+
+</div>
