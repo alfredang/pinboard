@@ -549,12 +549,124 @@ body {
 
 /* ─── Responsive ────────────────────────────────────── */
 @media (max-width: 600px) {
-  .nav-title   { font-size: 1.1rem; }
-  .board-title { font-size: 1rem; }
-  .home-hero   { padding: 40px 16px 28px; }
-  .btn-lg      { padding: 12px 22px; }
+  /* Navbar: compact layout */
+  .navbar { padding: 0 12px; gap: 8px; }
+  .nav-title { font-size: 1rem; }
+  .nav-actions { gap: 6px; }
+  .nav-actions .btn {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+  /* Hide "My Boards" text on very small screens, keep + New Board */
+  #btnMyBoards { padding: 6px 8px; font-size: 0.7rem; }
+  #btnNewBoard { padding: 6px 10px; font-size: 0.75rem; }
+
+  /* Board toolbar: wrap into rows */
+  .board-toolbar {
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    gap: 6px;
+  }
+  .board-title-wrap { flex: 1 1 auto; min-width: 0; }
+  .board-title {
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: block;
+  }
+  .toolbar-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .toolbar-actions .btn {
+    padding: 5px 8px;
+    font-size: 0.75rem;
+  }
+  .collab-badge {
+    font-size: 0.72rem;
+    padding: 3px 8px;
+  }
+  #btnBack { padding: 5px 8px; font-size: 0.8rem; }
+
+  /* Sync banner */
+  .sync-banner {
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    gap: 6px;
+  }
+
+  /* Background picker */
+  .bg-picker {
+    padding: 8px 12px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .bg-swatch { width: 24px; height: 24px; }
+
+  /* Canvas: stacked column layout on mobile */
+  .canvas {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 12px;
+    gap: 12px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    height: auto;
+    min-height: calc(100vh - var(--nav-h) - 80px);
+  }
+
+  /* Force all posts into stacked flow on mobile (override absolute positioning) */
+  .post {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    width: calc(100% - 8px) !important;
+    max-width: 360px;
+    min-height: auto;
+    padding: 14px 12px 10px;
+    cursor: default;
+  }
+  .post-title { font-size: 0.85rem; }
+  .post-content { font-size: 0.78rem; }
+  .post-author-tag { font-size: 0.58rem; }
+
+  /* Show edit button on mobile (no hover) */
+  .post .post-actions { opacity: 1; }
+
+  /* Empty state */
+  .empty-canvas { position: relative; }
+
+  /* Home */
+  .home-hero { padding: 40px 16px 28px; }
+  .home-hero p { font-size: 0.95rem; }
+  .btn-lg { padding: 12px 22px; font-size: 0.92rem; }
+  .hero-actions { gap: 10px; }
   .boards-grid { padding: 20px 16px; gap: 14px; }
-  .post        { width: 160px; min-height: 140px; padding: 14px 12px 10px; }
+
+  /* Modals */
+  .modal { padding: 20px; border-radius: 12px; }
+  .modal h3 { font-size: 1.1rem; }
+  .room-code { font-size: 2rem; letter-spacing: 5px; padding: 12px; }
+  .input-code {
+    font-size: 1.5rem !important;
+    letter-spacing: 8px !important;
+  }
+}
+
+/* Extra small screens (iPhone SE, etc.) */
+@media (max-width: 380px) {
+  .navbar { padding: 0 8px; }
+  .nav-logo { font-size: 1.2rem; }
+  .nav-title { font-size: 0.9rem; }
+  /* Stack join/new buttons, hide My Boards label */
+  #btnMyBoards { display: none; }
+  .nav-actions .btn { padding: 5px 8px; font-size: 0.7rem; }
+  .board-toolbar { padding: 6px 8px; }
+  .board-title { font-size: 0.85rem; }
 }
 
 /* ─── Collaboration UI ───────────────────────────────── */
