@@ -19,8 +19,7 @@
 
 ## Screenshot
 
-<!-- Add a screenshot of your app here -->
-<!-- ![Screenshot](screenshot.png) -->
+![Pinboard Screenshot](screenshot.png)
 
 > 🌐 **[Try it live →](https://alfredang.github.io/pinboard/)**
 
@@ -37,13 +36,13 @@
 | 🗂 **Multiple Boards** | Create, name, and manage unlimited boards |
 | 🖱 **Drag & Drop** | Freely move sticky notes around the canvas |
 | 🎨 **Colorful Posts** | 7 pastel color options per sticky note |
-| 👤 **Nicknamed Collaboration** | Guests join with a nickname to identify themselves |
-| 🏷 **Post Authors** | New posts show the creator nickname on each card |
+| 🔗 **Real-time Collaboration** | Live sync via Firebase with room codes and QR sharing |
+| 👤 **Nicknamed Authors** | Guests join with a nickname, shown on each post |
 | 🖼 **Board Backgrounds** | Solid colors, dot grid, and line grid patterns |
 | 📐 **3 Layout Modes** | Free (drag anywhere), Grid, and List |
 | 💾 **Auto-Save** | All boards and posts persist via local storage |
 | 📱 **Mobile Ready** | Touch drag-and-drop, fully responsive |
-| ✏️ **Edit & Delete** | Update or remove any post at any time |
+| ✏️ **Edit & Delete** | Hover to reveal edit icon overlay |
 | 👁 **Board Previews** | Mini-preview cards on the home screen |
 
 ---
@@ -53,20 +52,22 @@
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES2024-F7DF1E?logo=javascript&logoColor=black)
-![LocalStorage](https://img.shields.io/badge/Storage-LocalStorage-orange?logo=databricks&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-RTDB-FFCA28?logo=firebase&logoColor=black)
+![Google Fonts](https://img.shields.io/badge/Fonts-DM%20Sans%20%2B%20DM%20Serif-4285F4?logo=googlefonts&logoColor=white)
 ![GitHub Pages](https://img.shields.io/badge/Hosting-GitHub%20Pages-181717?logo=github&logoColor=white)
-![GitHub Actions](https://img.shields.io/badge/CI/CD-GitHub%20Actions-2088FF?logo=github-actions&logoColor=white)
 
 | Layer | Technology |
 |-------|-----------|
 | **Frontend** | HTML5, CSS3, Vanilla JavaScript (ES6+) |
+| **Typography** | DM Sans + DM Serif Text (Google Fonts) |
+| **Real-time Sync** | Firebase Realtime Database |
 | **Storage** | Browser LocalStorage API |
 | **Layout** | CSS Grid, Flexbox |
 | **Animations** | CSS Keyframes, Transitions |
 | **CI/CD** | GitHub Actions |
 | **Hosting** | GitHub Pages |
 
-**Zero dependencies. No frameworks. No build step.**
+**Zero frameworks. No build step. Just open and go.**
 
 ---
 
@@ -79,17 +80,21 @@ graph TB
     App["⚙️ app.js<br/>Controller & Event Bindings"]
     Board["📋 board.js<br/>Board Management"]
     Post["📌 post.js<br/>Post Rendering & Drag-Drop"]
+    Sync["🔗 sync.js<br/>Real-time Collaboration"]
     Store["💾 storage.js<br/>LocalStorage CRUD"]
     CSS["🎨 style.css<br/>UI, Animations, Responsive"]
     LS[("🗄 LocalStorage<br/>Boards & Posts")]
+    FB[("🔥 Firebase RTDB<br/>Live Sync")]
 
     User -->|"interacts"| UI
     UI --> App
     App --> Board
     App --> Post
+    App --> Sync
     Board --> Store
     Post --> Store
     Store <--> LS
+    Sync <--> FB
     UI --> CSS
 ```
 
@@ -103,13 +108,19 @@ pinboard/
 ├── css/
 │   └── style.css               # All UI styles, animations, responsive
 ├── js/
+│   ├── config.js               # Firebase configuration
 │   ├── storage.js              # LocalStorage CRUD helpers
+│   ├── sync.js                 # Real-time collaboration (Firebase RTDB)
 │   ├── board.js                # Board creation, rendering, management
 │   ├── post.js                 # Post creation, drag-and-drop, rendering
 │   └── app.js                  # Main controller, event bindings
+├── .claude/
+│   ├── commands/               # Project-level Claude Code commands
+│   └── test-app/               # Playwright testing toolkit
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml          # GitHub Actions → GitHub Pages CI/CD
+├── CLAUDE.md                   # AI assistant project instructions
 ├── README.md
 └── LICENSE
 ```

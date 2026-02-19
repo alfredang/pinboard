@@ -31,12 +31,14 @@ const PostManager = {
     }
 
     el.innerHTML = `
+      <div class="post-actions">
+        <button class="post-btn edit-btn" title="Edit post" aria-label="Edit post">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+        </button>
+      </div>
       ${post.title ? `<div class="post-title">${this._escape(post.title)}</div>` : ''}
       <div class="post-content">${this._escape(post.content)}</div>
-      ${post.authorNickname ? `<div class="post-author">by ${this._escape(post.authorNickname)}</div>` : ''}
-      <div class="post-actions">
-        <button class="post-btn edit-btn">✏️ Edit</button>
-      </div>
+      ${post.authorNickname ? `<div class="post-author"><span class="post-author-tag"><span class="author-dot"></span>${this._escape(post.authorNickname)}</span></div>` : ''}
     `;
 
     el.querySelector('.edit-btn').onclick = (e) => {
