@@ -7,6 +7,7 @@ const Sync = {
   db: null,
   roomRef: null,
   sessionId: null,
+  currentNickname: 'Guest',
   currentRoomCode: null,
   isHost: false,
   onUpdateCallback: null,
@@ -65,7 +66,7 @@ const Sync = {
 
   // ── Guest: Join a room ────────────────────────────────
 
-  async joinRoom(code) {
+  async joinRoom(code, nickname = 'Guest') {
     if (!this.db) {
       console.error('[Sync] db is null — Firebase not initialized');
       return null;
@@ -77,12 +78,12 @@ const Sync = {
         return null;
       }
       const roomData = snap.val();
+      this.currentNickname = this._sanitizeNickname(nickname);
       this.currentRoomCode = code;
       this.isHost = false;
       this.roomRef = this.db.ref(`rooms/${code}`);
       this._listenPresence(code);
       this._listenBoardChanges(code);
-      this._announcePresence(code);
       return roomData.board;
     } catch (e) {
       console.error('[Sync] joinRoom failed:', e);
@@ -121,7 +122,11 @@ const Sync = {
   _announcePresence(code) {
     if (!this.db) return;
     const myRef = this.db.ref(`rooms/${code}/presence/${this.sessionId}`);
-    myRef.set({ joinedAt: firebase.database.ServerValue.TIMESTAMP, active: true });
+    myRef.set({
+      joinedAt: firebase.database.ServerValue.TIMESTAMP,
+      active: true,
+      nickname: this.currentNickname || 'Guest'
+    });
     myRef.onDisconnect().remove();
   },
 
@@ -155,6 +160,11 @@ const Sync = {
 
   _serializeBoard(board) {
     return JSON.parse(JSON.stringify({ ...board, _lastEditBy: this.sessionId }));
+  },
+
+  _sanitizeNickname(nickname) {
+    const clean = String(nickname || '').trim().slice(0, 24);
+    return clean || 'Guest';
   },
 
   onUpdate(cb)   { this.onUpdateCallback = cb; },

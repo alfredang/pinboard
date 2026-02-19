@@ -182,10 +182,14 @@
   <div class="modal-overlay" id="joinModal" style="display:none">
     <div class="modal">
       <h3>🚪 Join a Board</h3>
-      <p class="modal-desc">Enter the 6-digit code shared with you.</p>
+      <p class="modal-desc">Add your nickname and the 6-digit code.</p>
+      <div class="form-group">
+        <label>Nickname</label>
+        <input type="text" id="joinNickname" placeholder="Your nickname" maxlength="24" autocomplete="nickname">
+      </div>
       <div class="form-group">
         <label>Room Code</label>
-        <input type="text" id="joinCode" placeholder="123456" maxlength="6"
+        <input type="text" id="joinCode" placeholder="" maxlength="6"
                pattern="[0-9]*" inputmode="numeric" class="input-code">
       </div>
       <div id="joinError" class="error-msg" style="display:none">

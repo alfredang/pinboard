@@ -6,12 +6,13 @@ const PostManager = {
   selectedColor: '#fff9c4',
   editingPostId: null,
 
-  createPost(title, content, color, x, y) {
+  createPost(title, content, color, x, y, authorNickname = '') {
     return {
       id: Storage.uid(),
       title: title.trim(),
       content: content.trim(),
       color: color || '#fff9c4',
+      authorNickname: String(authorNickname || '').trim().slice(0, 24),
       x: x ?? Math.random() * 400 + 50,
       y: y ?? Math.random() * 300 + 50,
       createdAt: Date.now()
@@ -32,6 +33,7 @@ const PostManager = {
     el.innerHTML = `
       ${post.title ? `<div class="post-title">${this._escape(post.title)}</div>` : ''}
       <div class="post-content">${this._escape(post.content)}</div>
+      ${post.authorNickname ? `<div class="post-author">by ${this._escape(post.authorNickname)}</div>` : ''}
       <div class="post-actions">
         <button class="post-btn edit-btn">✏️ Edit</button>
       </div>

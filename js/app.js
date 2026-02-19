@@ -5,6 +5,7 @@
 const App = {
   selectedLayout: 'free',
   qrInstance: null,
+  nicknameKey: 'pinboard_nickname',
 
   async init() {
     await Sync.init();
@@ -23,7 +24,13 @@ const App = {
     const params = new URLSearchParams(window.location.search);
     const roomCode = params.get('room');
     if (roomCode) {
-      setTimeout(() => this.joinRoomByCode(roomCode), 300);
+      const savedNickname = this._getSavedNickname();
+      if (savedNickname) {
+        setTimeout(() => this.joinRoomByCode(roomCode, savedNickname), 300);
+      } else {
+        this.showHome();
+        this.openJoinModal(roomCode);
+      }
     } else {
       this.showHome();
     }
@@ -222,12 +229,24 @@ const App = {
     };
 
     document.getElementById('confirmJoin').onclick = async () => {
+      const nickname = document.getElementById('joinNickname').value.trim();
       const code = document.getElementById('joinCode').value.trim();
-      if (code.length !== 6) return;
       const btn = document.getElementById('confirmJoin');
       btn.textContent = 'Joining…';
       btn.disabled = true;
-      await this.joinRoomByCode(code);
+      if (nickname.length < 2) {
+        this._showJoinError('Please enter a nickname (at least 2 characters).');
+        btn.textContent = 'Join Board';
+        btn.disabled = false;
+        return;
+      }
+      if (code.length !== 6) {
+        this._showJoinError('Please enter a valid 6-digit room code.');
+        btn.textContent = 'Join Board';
+        btn.disabled = false;
+        return;
+      }
+      await this.joinRoomByCode(code, nickname);
       btn.textContent = 'Join Board';
       btn.disabled = false;
     };
@@ -235,38 +254,56 @@ const App = {
     document.getElementById('joinCode').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') document.getElementById('confirmJoin').click();
     });
+    document.getElementById('joinNickname').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('confirmJoin').click();
+    });
 
     // Auto-format: only digits
     document.getElementById('joinCode').addEventListener('input', (e) => {
       e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
     });
+    document.getElementById('joinNickname').addEventListener('input', (e) => {
+      e.target.value = e.target.value.slice(0, 24);
+      if (e.target.value.trim().length >= 2) this._hideJoinError();
+    });
   },
 
-  openJoinModal() {
-    document.getElementById('joinCode').value = '';
-    document.getElementById('joinError').style.display = 'none';
+  openJoinModal(prefillCode = '') {
+    document.getElementById('joinNickname').value = this._getSavedNickname();
+    document.getElementById('joinCode').value = prefillCode;
+    this._hideJoinError();
     document.getElementById('joinModal').style.display = 'flex';
-    setTimeout(() => document.getElementById('joinCode').focus(), 100);
+    const target = document.getElementById('joinNickname').value.trim().length >= 2
+      ? document.getElementById('joinCode')
+      : document.getElementById('joinNickname');
+    setTimeout(() => target.focus(), 100);
   },
 
-  async joinRoomByCode(code) {
+  async joinRoomByCode(code, nickname = '') {
     if (!SYNC_ENABLED || !Sync.db) {
-      // Try re-initializing Firebase in case it failed silently
       const ok = await Sync.init();
       if (!ok || !Sync.db) {
         alert('Firebase not connected. Check console for errors.');
         return;
       }
     }
-    document.getElementById('joinModal').style.display = 'none';
-    document.getElementById('joinError').style.display = 'none';
-
-    const boardData = await Sync.joinRoom(code);
-    if (!boardData) {
-      document.getElementById('joinModal').style.display = 'flex';
-      document.getElementById('joinError').style.display = 'block';
+    const cleanNickname = nickname.trim().slice(0, 24);
+    if (cleanNickname.length < 2) {
+      this.openJoinModal(code);
+      this._showJoinError('Please enter a nickname (at least 2 characters).');
       return;
     }
+
+    document.getElementById('joinModal').style.display = 'none';
+    this._hideJoinError();
+
+    const boardData = await Sync.joinRoom(code, cleanNickname);
+    if (!boardData) {
+      document.getElementById('joinModal').style.display = 'flex';
+      this._showJoinError('Room not found. Check the code and try again.');
+      return;
+    }
+    localStorage.setItem(this.nicknameKey, cleanNickname);
 
     // Load the shared board
     const board = { ...boardData, id: boardData.id || Storage.uid() };
@@ -280,6 +317,27 @@ const App = {
 
     // Clean URL
     window.history.replaceState({}, '', window.location.pathname);
+  },
+
+  _showJoinError(message) {
+    const el = document.getElementById('joinError');
+    el.textContent = `❌ ${message}`;
+    el.style.display = 'block';
+  },
+
+  _hideJoinError() {
+    document.getElementById('joinError').style.display = 'none';
+  },
+
+  _getSavedNickname() {
+    return (localStorage.getItem(this.nicknameKey) || '').trim().slice(0, 24);
+  },
+
+  _getPostAuthorNickname() {
+    const localNickname = this._getSavedNickname();
+    if (localNickname) return localNickname;
+    const syncNickname = String(Sync.currentNickname || '').trim().slice(0, 24);
+    return syncNickname || 'Host';
   },
 
   // ── Sync Callbacks ────────────────────────────────────
@@ -412,7 +470,14 @@ const App = {
         const rect = canvas.getBoundingClientRect();
         const x = Math.random() * Math.max(100, rect.width - 250) + 20;
         const y = Math.random() * Math.max(100, rect.height - 200) + 20;
-        const post = PostManager.createPost(title, content, color, x, y);
+        const post = PostManager.createPost(
+          title,
+          content,
+          color,
+          x,
+          y,
+          this._getPostAuthorNickname()
+        );
         board.posts.push(post);
       }
 

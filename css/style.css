@@ -284,6 +284,13 @@ body {
   white-space: pre-wrap;
 }
 
+.post-author {
+  margin-top: 2px;
+  font-size: 0.72rem;
+  color: rgba(0,0,0,0.52);
+  font-weight: 600;
+}
+
 .post-actions {
   display: none;
   gap: 6px;

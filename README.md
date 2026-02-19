@@ -37,6 +37,8 @@
 | 🗂 **Multiple Boards** | Create, name, and manage unlimited boards |
 | 🖱 **Drag & Drop** | Freely move sticky notes around the canvas |
 | 🎨 **Colorful Posts** | 7 pastel color options per sticky note |
+| 👤 **Nicknamed Collaboration** | Guests join with a nickname to identify themselves |
+| 🏷 **Post Authors** | New posts show the creator nickname on each card |
 | 🖼 **Board Backgrounds** | Solid colors, dot grid, and line grid patterns |
 | 📐 **3 Layout Modes** | Free (drag anywhere), Grid, and List |
 | 💾 **Auto-Save** | All boards and posts persist via local storage |
@@ -145,10 +147,12 @@ No `npm install`. No `.env`. Just open and go.
 
 1. **Create a board** — Click **"Make a board"** or **"+ New Board"**
 2. **Choose a layout** — Free (drag anywhere), Grid, or List
-3. **Add posts** — Click **"+ Add Post"**, write content, pick a color
-4. **Drag posts** — Click and drag any post to reposition (Free layout)
-5. **Edit posts** — Hover a post → click ✏️ Edit
-6. **Change background** — Click 🎨 in the board toolbar
+3. **Join with nickname** — Enter your nickname + 6-digit room code to join shared boards
+4. **Add posts** — Click **"+ Add Post"**, write content, pick a color
+5. **See authors** — Each new post card displays `by <nickname>`
+6. **Drag posts** — Click and drag any post to reposition (Free layout)
+7. **Edit posts** — Hover a post → click ✏️ Edit
+8. **Change background** — Click 🎨 in the board toolbar
 
 ---
 
