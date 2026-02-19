@@ -1,11 +1,13 @@
 /**
- * app.js — Main application controller for PadClone
+ * app.js — Main application controller for Pinboard
  */
 
 const App = {
   selectedLayout: 'free',
+  qrInstance: null,
 
-  init() {
+  async init() {
+    await Sync.init();
     this._bindNav();
     this._bindHome();
     this._bindBoardScreen();
@@ -13,7 +15,18 @@ const App = {
     this._bindNewBoardModal();
     this._bindColorSwatches();
     this._bindBgPicker();
-    this.showHome();
+    this._bindShareModal();
+    this._bindJoinModal();
+    this._bindSyncCallbacks();
+
+    // Auto-join via URL param: ?room=123456
+    const params = new URLSearchParams(window.location.search);
+    const roomCode = params.get('room');
+    if (roomCode) {
+      setTimeout(() => this.joinRoomByCode(roomCode), 300);
+    } else {
+      this.showHome();
+    }
   },
 
   // ── Navigation ──────────────────────────────────────
@@ -31,9 +44,7 @@ const App = {
 
     const canvas = document.getElementById('canvas');
     canvas.className = 'canvas';
-    if (board.layout !== 'free') {
-      canvas.classList.add(`layout-${board.layout}`);
-    }
+    if (board.layout !== 'free') canvas.classList.add(`layout-${board.layout}`);
 
     this.applyBackground(board.background || '#f5f5f5');
     PostManager.renderAll(board, canvas);
@@ -57,9 +68,10 @@ const App = {
 
   _bindHome() {
     document.getElementById('heroMakeBoard').onclick = () => this.openNewBoardModal();
-    document.getElementById('heroExplore').onclick = () => {
+    document.getElementById('heroJoin').onclick = () => this.openJoinModal();
+    document.getElementById('heroExplore') && (document.getElementById('heroExplore').onclick = () => {
       document.getElementById('boardsGrid').scrollIntoView({ behavior: 'smooth' });
-    };
+    });
   },
 
   // ── Navbar ──────────────────────────────────────────
@@ -68,12 +80,16 @@ const App = {
     document.querySelector('.nav-brand').onclick = () => this.showHome();
     document.getElementById('btnMyBoards').onclick = () => this.showHome();
     document.getElementById('btnNewBoard').onclick = () => this.openNewBoardModal();
+    document.getElementById('btnJoinBoard').onclick = () => this.openJoinModal();
   },
 
   // ── Board Screen ─────────────────────────────────────
 
   _bindBoardScreen() {
-    document.getElementById('btnBack').onclick = () => {
+    document.getElementById('btnBack').onclick = async () => {
+      await Sync.leaveRoom();
+      document.getElementById('syncBanner').style.display = 'none';
+      document.getElementById('collabBadge').style.display = 'none';
       BoardManager.saveCurrentBoard();
       this.showHome();
     };
@@ -81,12 +97,20 @@ const App = {
     document.getElementById('btnAddPost').onclick = () => this.openNewPost();
 
     document.getElementById('boardTitle').addEventListener('blur', (e) => {
-      BoardManager.updateTitle(e.target.textContent.trim() || 'Untitled Board');
+      const title = e.target.textContent.trim() || 'Untitled Board';
+      BoardManager.updateTitle(title);
+      if (Sync.currentRoomCode) Sync.pushUpdate(BoardManager.currentBoard);
     });
 
     document.getElementById('boardTitle').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
     });
+
+    document.getElementById('btnLeaveRoom').onclick = async () => {
+      await Sync.leaveRoom();
+      document.getElementById('syncBanner').style.display = 'none';
+      document.getElementById('collabBadge').style.display = 'none';
+    };
   },
 
   // ── Background Picker ─────────────────────────────────
@@ -102,7 +126,171 @@ const App = {
         document.querySelectorAll('.bg-swatch').forEach(s => s.classList.remove('active'));
         sw.classList.add('active');
         BoardManager.updateBackground(sw.dataset.bg);
+        if (Sync.currentRoomCode) Sync.pushUpdate(BoardManager.currentBoard);
       };
+    });
+  },
+
+  // ── Share Modal ───────────────────────────────────────
+
+  _bindShareModal() {
+    document.getElementById('btnShare').onclick = () => this.openShareModal();
+    document.getElementById('closeShare').onclick = () => {
+      document.getElementById('shareModal').style.display = 'none';
+    };
+    document.getElementById('shareModal').onclick = (e) => {
+      if (e.target === document.getElementById('shareModal'))
+        document.getElementById('shareModal').style.display = 'none';
+    };
+
+    document.getElementById('btnCreateRoom').onclick = async () => {
+      if (!SYNC_ENABLED) {
+        document.getElementById('syncNote').style.display = 'block';
+        return;
+      }
+      const board = BoardManager.currentBoard;
+      if (!board) return;
+
+      document.getElementById('btnCreateRoom').textContent = 'Creating room…';
+      document.getElementById('btnCreateRoom').disabled = true;
+
+      const code = await Sync.createRoom(board);
+      if (!code) return;
+
+      this._showShareActive(code);
+    };
+
+    document.getElementById('btnCopyLink').onclick = () => {
+      const link = document.getElementById('shareLink');
+      link.select();
+      document.execCommand('copy');
+      document.getElementById('btnCopyLink').textContent = '✓ Copied!';
+      setTimeout(() => document.getElementById('btnCopyLink').textContent = 'Copy', 2000);
+    };
+  },
+
+  openShareModal() {
+    document.getElementById('shareSetup').style.display = 'block';
+    document.getElementById('shareActive').style.display = 'none';
+    document.getElementById('btnCreateRoom').textContent = 'Generate Join Code';
+    document.getElementById('btnCreateRoom').disabled = false;
+    document.getElementById('syncNote').style.display = 'none';
+
+    // If already hosting a room
+    if (Sync.currentRoomCode && Sync.isHost) {
+      this._showShareActive(Sync.currentRoomCode);
+    }
+
+    document.getElementById('shareModal').style.display = 'flex';
+  },
+
+  _showShareActive(code) {
+    document.getElementById('shareSetup').style.display = 'none';
+    document.getElementById('shareActive').style.display = 'block';
+    document.getElementById('roomCodeDisplay').textContent = code;
+
+    const url = `${window.location.origin}${window.location.pathname}?room=${code}`;
+    document.getElementById('shareLink').value = url;
+
+    // Generate QR code
+    const qrEl = document.getElementById('qrcode');
+    qrEl.innerHTML = '';
+    if (typeof QRCode !== 'undefined') {
+      new QRCode(qrEl, {
+        text: url,
+        width: 150,
+        height: 150,
+        colorDark: '#212121',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+
+    // Show collab badge on board
+    document.getElementById('collabBadge').style.display = 'flex';
+  },
+
+  // ── Join Modal ────────────────────────────────────────
+
+  _bindJoinModal() {
+    document.getElementById('cancelJoin').onclick = () => {
+      document.getElementById('joinModal').style.display = 'none';
+    };
+    document.getElementById('joinModal').onclick = (e) => {
+      if (e.target === document.getElementById('joinModal'))
+        document.getElementById('joinModal').style.display = 'none';
+    };
+
+    document.getElementById('confirmJoin').onclick = async () => {
+      const code = document.getElementById('joinCode').value.trim();
+      if (code.length !== 6) return;
+      await this.joinRoomByCode(code);
+    };
+
+    document.getElementById('joinCode').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('confirmJoin').click();
+    });
+
+    // Auto-format: only digits
+    document.getElementById('joinCode').addEventListener('input', (e) => {
+      e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    });
+  },
+
+  openJoinModal() {
+    document.getElementById('joinCode').value = '';
+    document.getElementById('joinError').style.display = 'none';
+    document.getElementById('joinModal').style.display = 'flex';
+    setTimeout(() => document.getElementById('joinCode').focus(), 100);
+  },
+
+  async joinRoomByCode(code) {
+    if (!SYNC_ENABLED) {
+      alert('Live sync requires Firebase setup. See js/config.js.');
+      return;
+    }
+    document.getElementById('joinModal').style.display = 'none';
+    document.getElementById('joinError').style.display = 'none';
+
+    const boardData = await Sync.joinRoom(code);
+    if (!boardData) {
+      document.getElementById('joinModal').style.display = 'flex';
+      document.getElementById('joinError').style.display = 'block';
+      return;
+    }
+
+    // Load the shared board
+    const board = { ...boardData, id: boardData.id || Storage.uid() };
+    delete board._lastEditBy;
+    BoardManager.currentBoard = board;
+    this.showBoard(board);
+
+    // Show live banner
+    document.getElementById('syncBanner').style.display = 'flex';
+    document.getElementById('collabBadge').style.display = 'flex';
+
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname);
+  },
+
+  // ── Sync Callbacks ────────────────────────────────────
+
+  _bindSyncCallbacks() {
+    Sync.onUpdate((boardData) => {
+      if (!BoardManager.currentBoard) return;
+      // Merge remote board into current
+      const board = BoardManager.currentBoard;
+      board.posts = boardData.posts || [];
+      board.background = boardData.background || board.background;
+      board.name = boardData.name || board.name;
+      document.getElementById('boardTitle').textContent = board.name;
+      this.applyBackground(board.background);
+      PostManager.renderAll(board, document.getElementById('canvas'));
+    });
+
+    Sync.onPresence((count) => {
+      document.getElementById('collabCount').textContent = count;
+      document.getElementById('shareCollabCount').textContent = count;
     });
   },
 
@@ -122,13 +310,10 @@ const App = {
     document.getElementById('cancelNewBoard').onclick = () => {
       document.getElementById('newBoardModal').style.display = 'none';
     };
-
     document.getElementById('newBoardModal').onclick = (e) => {
-      if (e.target === document.getElementById('newBoardModal')) {
+      if (e.target === document.getElementById('newBoardModal'))
         document.getElementById('newBoardModal').style.display = 'none';
-      }
     };
-
     document.querySelectorAll('.layout-opt').forEach(opt => {
       opt.onclick = () => {
         document.querySelectorAll('.layout-opt').forEach(o => o.classList.remove('selected'));
@@ -136,7 +321,6 @@ const App = {
         this.selectedLayout = opt.dataset.layout;
       };
     });
-
     document.getElementById('confirmNewBoard').onclick = () => {
       const name = document.getElementById('newBoardName').value.trim() || 'Untitled Board';
       const board = BoardManager.createBoard(name, this.selectedLayout);
@@ -144,7 +328,6 @@ const App = {
       document.getElementById('newBoardModal').style.display = 'none';
       BoardManager.openBoard(board.id);
     };
-
     document.getElementById('newBoardName').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') document.getElementById('confirmNewBoard').click();
     });
@@ -169,7 +352,6 @@ const App = {
     if (!board) return;
     const post = board.posts.find(p => p.id === postId);
     if (!post) return;
-
     PostManager.editingPostId = postId;
     document.getElementById('postModalTitle').textContent = 'Edit Post';
     document.getElementById('postTitle').value = post.title || '';
@@ -197,11 +379,9 @@ const App = {
     document.getElementById('cancelPost').onclick = () => {
       document.getElementById('postModal').style.display = 'none';
     };
-
     document.getElementById('postModal').onclick = (e) => {
-      if (e.target === document.getElementById('postModal')) {
+      if (e.target === document.getElementById('postModal'))
         document.getElementById('postModal').style.display = 'none';
-      }
     };
 
     document.getElementById('savePost').onclick = () => {
@@ -212,27 +392,24 @@ const App = {
       if (!board) return;
 
       if (PostManager.editingPostId) {
-        // Edit existing
         const post = board.posts.find(p => p.id === PostManager.editingPostId);
         if (post) {
           post.title   = title.trim();
           post.content = content.trim();
           post.color   = color;
-          BoardManager.saveCurrentBoard();
-          PostManager.renderAll(board, document.getElementById('canvas'));
         }
       } else {
-        // New post
         const canvas = document.getElementById('canvas');
         const rect = canvas.getBoundingClientRect();
         const x = Math.random() * Math.max(100, rect.width - 250) + 20;
         const y = Math.random() * Math.max(100, rect.height - 200) + 20;
         const post = PostManager.createPost(title, content, color, x, y);
         board.posts.push(post);
-        BoardManager.saveCurrentBoard();
-        PostManager.renderAll(board, canvas);
       }
 
+      BoardManager.saveCurrentBoard();
+      PostManager.renderAll(board, document.getElementById('canvas'));
+      if (Sync.currentRoomCode) Sync.pushUpdate(board);
       document.getElementById('postModal').style.display = 'none';
     };
 
@@ -243,6 +420,7 @@ const App = {
       board.posts = board.posts.filter(p => p.id !== PostManager.editingPostId);
       BoardManager.saveCurrentBoard();
       PostManager.renderAll(board, document.getElementById('canvas'));
+      if (Sync.currentRoomCode) Sync.pushUpdate(board);
       document.getElementById('postModal').style.display = 'none';
     };
   }

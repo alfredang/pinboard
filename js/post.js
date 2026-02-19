@@ -125,12 +125,13 @@ const PostManager = {
       if (!dragging) return;
       dragging = false;
       el.classList.remove('dragging');
-      // Save updated position
       const board = BoardManager.currentBoard;
       if (board) {
         const p = board.posts.find(p => p.id === post.id);
         if (p) { p.x = post.x; p.y = post.y; }
         BoardManager.saveCurrentBoard();
+        // Sync position to collaborators
+        if (Sync.currentRoomCode) Sync.pushUpdate(board);
       }
     };
 
