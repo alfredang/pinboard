@@ -19,7 +19,7 @@
 
 ## Screenshot
 
-![Pinboard Screenshot](screenshot.png)
+![Pinboard Screenshot](pinboard-preview.png)
 
 > 🌐 **[Try it live →](https://alfredang.github.io/pinboard/)**
 
@@ -44,6 +44,8 @@
 | 📱 **Mobile Ready** | Touch drag-and-drop, fully responsive |
 | ✏️ **Edit & Delete** | Hover to reveal edit icon overlay |
 | 👁 **Board Previews** | Mini-preview cards on the home screen |
+| 🌙 **Dark / Light Theme** | Toggle between themes with smooth transitions |
+| 🎉 **Celebrate Button** | Balloons animation + trumpet fanfare to mark collaboration milestones |
 
 ---
 
@@ -53,13 +55,13 @@
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES2024-F7DF1E?logo=javascript&logoColor=black)
 ![Firebase](https://img.shields.io/badge/Firebase-RTDB-FFCA28?logo=firebase&logoColor=black)
-![Google Fonts](https://img.shields.io/badge/Fonts-DM%20Sans%20%2B%20DM%20Serif-4285F4?logo=googlefonts&logoColor=white)
+![Google Fonts](https://img.shields.io/badge/Fonts-Fraunces%20%2B%20DM%20Sans-4285F4?logo=googlefonts&logoColor=white)
 ![GitHub Pages](https://img.shields.io/badge/Hosting-GitHub%20Pages-181717?logo=github&logoColor=white)
 
 | Layer | Technology |
 |-------|-----------|
 | **Frontend** | HTML5, CSS3, Vanilla JavaScript (ES6+) |
-| **Typography** | DM Sans + DM Serif Text (Google Fonts) |
+| **Typography** | Fraunces + DM Sans (Google Fonts) |
 | **Real-time Sync** | Firebase Realtime Database |
 | **Storage** | Browser LocalStorage API |
 | **Layout** | CSS Grid, Flexbox |
