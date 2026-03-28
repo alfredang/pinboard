@@ -7,8 +7,8 @@
   <title>Pinboard — Digital Canvas</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=4">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=5">
 </head>
 <body>
 
@@ -24,9 +24,13 @@
         <button class="btn btn-outline" id="btnMyBoards">My Boards</button>
         <button class="btn btn-outline" id="btnJoinBoard">Join Board</button>
         <button class="btn btn-primary" id="btnNewBoard">+ New Board</button>
-        <button class="btn btn-ghost theme-toggle" id="btnTheme" title="Toggle theme">
-          <span class="theme-icon-light">&#9790;</span>
-          <span class="theme-icon-dark">&#9728;</span>
+        <button class="btn btn-ghost theme-toggle" id="btnTheme" title="Toggle theme" aria-label="Toggle dark/light theme">
+          <span class="theme-icon-light">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </span>
+          <span class="theme-icon-dark">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </span>
         </button>
       </div>
     </nav>
@@ -58,6 +62,9 @@
           </div>
           <button class="btn btn-ghost" title="Share board" id="btnShare">🔗 Share</button>
           <button class="btn btn-ghost" title="Change background" id="btnBg">🎨</button>
+          <button class="btn btn-celebrate btn-sm" id="btnCelebrate" title="Celebrate the end of collaboration!">
+            <span class="celebrate-icon">🎉</span> Celebrate!
+          </button>
           <button class="btn btn-pink" id="btnAddPost">+ Add Post</button>
         </div>
       </div>
@@ -232,6 +239,9 @@
   <script src="js/board.js"></script>
   <script src="js/post.js"></script>
   <script src="js/app.js"></script>
+  <!-- Balloons container -->
+  <div id="balloonsContainer" class="balloons-container"></div>
+
   <script>
     // Theme toggle
     (function() {
@@ -244,6 +254,153 @@
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
         document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
         localStorage.setItem('pinboard_theme', isDark ? 'light' : 'dark');
+      };
+    })();
+
+    // Celebrate balloons + cheer sound
+    (function() {
+      const btn = document.getElementById('btnCelebrate');
+      const container = document.getElementById('balloonsContainer');
+      const balloonEmojis = ['🎈', '🎉', '🎊', '✨', '🥳', '⭐', '🎀', '💫'];
+
+      function createBalloon() {
+        const balloon = document.createElement('div');
+        balloon.className = 'balloon';
+        const emoji = balloonEmojis[Math.floor(Math.random() * balloonEmojis.length)];
+        const startX = Math.random() * 100;
+        const drift = (Math.random() - 0.5) * 40;
+        const duration = 2.5 + Math.random() * 2;
+        const delay = Math.random() * 0.8;
+        const size = 28 + Math.random() * 22;
+
+        balloon.textContent = emoji;
+        balloon.style.cssText = `
+          left: ${startX}%;
+          font-size: ${size}px;
+          --drift: ${drift}px;
+          animation: balloonRise ${duration}s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${delay}s forwards;
+        `;
+        container.appendChild(balloon);
+        setTimeout(() => balloon.remove(), (duration + delay) * 1000 + 200);
+      }
+
+      // Synthesize a celebratory fanfare + crowd cheer using Web Audio API
+      function playCheers() {
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const now = ctx.currentTime;
+          const master = ctx.createGain();
+          master.gain.value = 0.6;
+          master.connect(ctx.destination);
+
+          // -- Crowd cheering (filtered noise, fades in then sustains) --
+          const cheerLen = ctx.sampleRate * 2.5;
+          const cheerBuf = ctx.createBuffer(2, cheerLen, ctx.sampleRate);
+          for (let ch = 0; ch < 2; ch++) {
+            const d = cheerBuf.getChannelData(ch);
+            for (let i = 0; i < cheerLen; i++) {
+              const t = i / ctx.sampleRate;
+              const wobble = 1 + 0.3 * Math.sin(t * 6) * Math.sin(t * 11);
+              d[i] = (Math.random() * 2 - 1) * wobble;
+            }
+          }
+          const cheerSrc = ctx.createBufferSource();
+          cheerSrc.buffer = cheerBuf;
+          const cheerBP = ctx.createBiquadFilter();
+          cheerBP.type = 'bandpass';
+          cheerBP.frequency.value = 2200;
+          cheerBP.Q.value = 0.6;
+          const cheerHP = ctx.createBiquadFilter();
+          cheerHP.type = 'highpass';
+          cheerHP.frequency.value = 600;
+          const cheerGain = ctx.createGain();
+          cheerGain.gain.setValueAtTime(0, now);
+          cheerGain.gain.linearRampToValueAtTime(0.18, now + 0.15);
+          cheerGain.gain.setValueAtTime(0.18, now + 1.5);
+          cheerGain.gain.linearRampToValueAtTime(0, now + 2.5);
+          cheerSrc.connect(cheerBP);
+          cheerBP.connect(cheerHP);
+          cheerHP.connect(cheerGain);
+          cheerGain.connect(master);
+          cheerSrc.start(now);
+
+          // -- Rhythmic clapping (faster, more natural) --
+          const clapTimes = [0, 0.13, 0.26, 0.4, 0.53, 0.66, 0.82, 0.95, 1.08, 1.22, 1.38, 1.52, 1.68, 1.82];
+          clapTimes.forEach(t => {
+            const bufLen = ctx.sampleRate * 0.035;
+            const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+            const data = buf.getChannelData(0);
+            for (let i = 0; i < bufLen; i++) {
+              data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufLen, 8);
+            }
+            const src = ctx.createBufferSource();
+            src.buffer = buf;
+            const bp = ctx.createBiquadFilter();
+            bp.type = 'bandpass';
+            bp.frequency.value = 2800 + Math.random() * 1500;
+            bp.Q.value = 1.2;
+            const g = ctx.createGain();
+            g.gain.value = 0.2 + Math.random() * 0.1;
+            src.connect(bp); bp.connect(g); g.connect(master);
+            src.start(now + t);
+          });
+
+          // -- Triumphant fanfare (brass-like with harmonics) --
+          function playNote(freq, start, dur, vol) {
+            // Fundamental + harmonics for a richer brass tone
+            [1, 2, 3, 4].forEach((h, idx) => {
+              const osc = ctx.createOscillator();
+              osc.type = idx === 0 ? 'sawtooth' : 'triangle';
+              osc.frequency.value = freq * h;
+              const g = ctx.createGain();
+              const hVol = vol / (h * 1.5);
+              g.gain.setValueAtTime(0, now + start);
+              g.gain.linearRampToValueAtTime(hVol, now + start + 0.025);
+              g.gain.setValueAtTime(hVol * 0.85, now + start + dur * 0.3);
+              g.gain.exponentialRampToValueAtTime(0.001, now + start + dur);
+              const lp = ctx.createBiquadFilter();
+              lp.type = 'lowpass';
+              lp.frequency.value = 3000;
+              osc.connect(lp); lp.connect(g); g.connect(master);
+              osc.start(now + start);
+              osc.stop(now + start + dur + 0.05);
+            });
+          }
+          // Victory melody: C5-E5-G5-C6 (quick ascending fanfare)
+          playNote(523, 0.05, 0.30, 0.12);  // C5
+          playNote(659, 0.20, 0.30, 0.12);  // E5
+          playNote(784, 0.35, 0.30, 0.14);  // G5
+          playNote(1047, 0.55, 0.80, 0.16); // C6 (hold)
+          // Final chord: C5+E5+G5+C6 together
+          playNote(523, 1.0, 0.9, 0.08);
+          playNote(659, 1.0, 0.9, 0.08);
+          playNote(784, 1.0, 0.9, 0.10);
+          playNote(1047, 1.0, 0.9, 0.12);
+
+          // -- Sparkle chimes on top --
+          [0.6, 0.9, 1.3, 1.6, 2.0].forEach(t => {
+            const osc = ctx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.value = 1800 + Math.random() * 2000;
+            const g = ctx.createGain();
+            g.gain.setValueAtTime(0, now + t);
+            g.gain.linearRampToValueAtTime(0.06, now + t + 0.01);
+            g.gain.exponentialRampToValueAtTime(0.001, now + t + 0.4);
+            osc.connect(g); g.connect(master);
+            osc.start(now + t);
+            osc.stop(now + t + 0.5);
+          });
+
+          setTimeout(() => ctx.close(), 4000);
+        } catch(e) { /* Audio not available — balloons still work */ }
+      }
+
+      btn.onclick = () => {
+        if (btn.classList.contains('celebrating')) return;
+        btn.classList.add('celebrating');
+        playCheers();
+        for (let i = 0; i < 28; i++) createBalloon();
+        setTimeout(() => btn.classList.remove('celebrating'), 3500);
       };
     })();
   </script>
