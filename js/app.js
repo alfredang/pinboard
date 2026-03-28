@@ -4,8 +4,10 @@
 
 const App = {
   selectedLayout: 'free',
+  nicknameKey: 'pinboard_nickname',
 
-  init() {
+  async init() {
+    await Sync.init();
     this._bindNav();
     this._bindHome();
     this._bindBoardScreen();
@@ -14,31 +16,23 @@ const App = {
     this._bindColorSwatches();
     this._bindBgPicker();
     this._bindShareModal();
+    this._bindJoinModal();
+    this._bindSyncCallbacks();
 
-    // Auto-import board from shared URL: ?board=<encoded>
+    // Auto-join via URL param: ?room=123456
     const params = new URLSearchParams(window.location.search);
-    const boardParam = params.get('board');
-    if (boardParam) {
-      this._importSharedBoard(boardParam);
+    const roomCode = params.get('room');
+    if (roomCode) {
+      const savedNickname = this._getSavedNickname();
+      if (savedNickname) {
+        setTimeout(() => this.joinRoomByCode(roomCode, savedNickname), 300);
+      } else {
+        this.showHome();
+        this.openJoinModal(roomCode);
+      }
     } else {
       this.showHome();
     }
-  },
-
-  // ── Import a shared board from URL ────────────────
-  _importSharedBoard(encoded) {
-    const board = Sync.decodeBoard(encoded);
-    if (!board) {
-      alert('Invalid or corrupted board link.');
-      this.showHome();
-      return;
-    }
-    // Save to local storage and open it
-    Storage.saveBoard(board);
-    BoardManager.currentBoard = board;
-    this.showBoard(board);
-    // Clean URL
-    window.history.replaceState({}, '', window.location.pathname);
   },
 
   // ── Navigation ──────────────────────────────────────
@@ -80,6 +74,7 @@ const App = {
 
   _bindHome() {
     document.getElementById('heroMakeBoard').onclick = () => this.openNewBoardModal();
+    document.getElementById('heroJoin').onclick = () => this.openJoinModal();
   },
 
   // ── Navbar ──────────────────────────────────────────
@@ -88,12 +83,16 @@ const App = {
     document.querySelector('.nav-brand').onclick = () => this.showHome();
     document.getElementById('btnMyBoards').onclick = () => this.showHome();
     document.getElementById('btnNewBoard').onclick = () => this.openNewBoardModal();
+    document.getElementById('btnJoinBoard').onclick = () => this.openJoinModal();
   },
 
   // ── Board Screen ─────────────────────────────────────
 
   _bindBoardScreen() {
-    document.getElementById('btnBack').onclick = () => {
+    document.getElementById('btnBack').onclick = async () => {
+      await Sync.leaveRoom();
+      document.getElementById('syncBanner').style.display = 'none';
+      document.getElementById('collabBadge').style.display = 'none';
       BoardManager.saveCurrentBoard();
       this.showHome();
     };
@@ -103,11 +102,18 @@ const App = {
     document.getElementById('boardTitle').addEventListener('blur', (e) => {
       const title = e.target.textContent.trim() || 'Untitled Board';
       BoardManager.updateTitle(title);
+      if (Sync.currentRoomCode) Sync.pushUpdate(BoardManager.currentBoard);
     });
 
     document.getElementById('boardTitle').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
     });
+
+    document.getElementById('btnLeaveRoom').onclick = async () => {
+      await Sync.leaveRoom();
+      document.getElementById('syncBanner').style.display = 'none';
+      document.getElementById('collabBadge').style.display = 'none';
+    };
   },
 
   // ── Background Picker ─────────────────────────────────
@@ -123,6 +129,7 @@ const App = {
         document.querySelectorAll('.bg-swatch').forEach(s => s.classList.remove('active'));
         sw.classList.add('active');
         BoardManager.updateBackground(sw.dataset.bg);
+        if (Sync.currentRoomCode) Sync.pushUpdate(BoardManager.currentBoard);
       };
     });
   },
@@ -137,6 +144,25 @@ const App = {
     document.getElementById('shareModal').onclick = (e) => {
       if (e.target === document.getElementById('shareModal'))
         document.getElementById('shareModal').style.display = 'none';
+    };
+
+    document.getElementById('btnCreateRoom').onclick = async () => {
+      const board = BoardManager.currentBoard;
+      if (!board) return;
+
+      const btn = document.getElementById('btnCreateRoom');
+      btn.textContent = 'Creating room...';
+      btn.disabled = true;
+
+      const code = await Sync.createRoom(board);
+      if (!code) {
+        btn.textContent = 'Generate Join Code';
+        btn.disabled = false;
+        alert('Could not create room. Check your internet connection and try again.');
+        return;
+      }
+
+      this._showShareActive(code);
     };
 
     document.getElementById('btnCopyLink').onclick = () => {
@@ -154,10 +180,25 @@ const App = {
   },
 
   openShareModal() {
-    const board = BoardManager.currentBoard;
-    if (!board) return;
+    document.getElementById('shareSetup').style.display = 'block';
+    document.getElementById('shareActive').style.display = 'none';
+    document.getElementById('btnCreateRoom').textContent = 'Generate Join Code';
+    document.getElementById('btnCreateRoom').disabled = false;
 
-    const url = Sync.getShareUrl(board);
+    // If already hosting a room
+    if (Sync.currentRoomCode && Sync.isHost) {
+      this._showShareActive(Sync.currentRoomCode);
+    }
+
+    document.getElementById('shareModal').style.display = 'flex';
+  },
+
+  _showShareActive(code) {
+    document.getElementById('shareSetup').style.display = 'none';
+    document.getElementById('shareActive').style.display = 'block';
+    document.getElementById('roomCodeDisplay').textContent = code;
+
+    const url = `${window.location.origin}${window.location.pathname}?room=${code}`;
     document.getElementById('shareLink').value = url;
 
     // Generate QR code
@@ -174,7 +215,144 @@ const App = {
       });
     }
 
-    document.getElementById('shareModal').style.display = 'flex';
+    // Show collab badge on board
+    document.getElementById('collabBadge').style.display = 'flex';
+  },
+
+  // ── Join Modal ────────────────────────────────────────
+
+  _bindJoinModal() {
+    document.getElementById('cancelJoin').onclick = () => {
+      document.getElementById('joinModal').style.display = 'none';
+    };
+    document.getElementById('joinModal').onclick = (e) => {
+      if (e.target === document.getElementById('joinModal'))
+        document.getElementById('joinModal').style.display = 'none';
+    };
+
+    document.getElementById('confirmJoin').onclick = async () => {
+      const nickname = document.getElementById('joinNickname').value.trim();
+      const code = document.getElementById('joinCode').value.trim();
+      const btn = document.getElementById('confirmJoin');
+      btn.textContent = 'Joining...';
+      btn.disabled = true;
+      if (nickname.length < 2) {
+        this._showJoinError('Please enter a nickname (at least 2 characters).');
+        btn.textContent = 'Join Board';
+        btn.disabled = false;
+        return;
+      }
+      if (code.length !== 6) {
+        this._showJoinError('Please enter a valid 6-digit code.');
+        btn.textContent = 'Join Board';
+        btn.disabled = false;
+        return;
+      }
+      await this.joinRoomByCode(code, nickname);
+      btn.textContent = 'Join Board';
+      btn.disabled = false;
+    };
+
+    document.getElementById('joinCode').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('confirmJoin').click();
+    });
+    document.getElementById('joinNickname').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('confirmJoin').click();
+    });
+
+    // Auto-format: only digits
+    document.getElementById('joinCode').addEventListener('input', (e) => {
+      e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    });
+    document.getElementById('joinNickname').addEventListener('input', (e) => {
+      e.target.value = e.target.value.slice(0, 24);
+      if (e.target.value.trim().length >= 2) this._hideJoinError();
+    });
+  },
+
+  openJoinModal(prefillCode = '') {
+    document.getElementById('joinNickname').value = this._getSavedNickname();
+    document.getElementById('joinCode').value = prefillCode;
+    this._hideJoinError();
+    document.getElementById('joinModal').style.display = 'flex';
+    const target = document.getElementById('joinNickname').value.trim().length >= 2
+      ? document.getElementById('joinCode')
+      : document.getElementById('joinNickname');
+    setTimeout(() => target.focus(), 100);
+  },
+
+  async joinRoomByCode(code, nickname = '') {
+    const cleanNickname = nickname.trim().slice(0, 24);
+    if (cleanNickname.length < 2) {
+      this.openJoinModal(code);
+      this._showJoinError('Please enter a nickname (at least 2 characters).');
+      return;
+    }
+
+    document.getElementById('joinModal').style.display = 'none';
+    this._hideJoinError();
+
+    const boardData = await Sync.joinRoom(code, cleanNickname);
+    if (!boardData) {
+      document.getElementById('joinModal').style.display = 'flex';
+      this._showJoinError('Board room not found. Check the code and try again.');
+      return;
+    }
+    localStorage.setItem(this.nicknameKey, cleanNickname);
+
+    // Load the shared board
+    const board = { ...boardData, id: boardData.id || Storage.uid() };
+    delete board._lastEditBy;
+    BoardManager.currentBoard = board;
+    this.showBoard(board);
+
+    // Show live banner
+    document.getElementById('syncBanner').style.display = 'flex';
+    document.getElementById('collabBadge').style.display = 'flex';
+
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname);
+  },
+
+  _showJoinError(message) {
+    const el = document.getElementById('joinError');
+    el.textContent = message;
+    el.style.display = 'block';
+  },
+
+  _hideJoinError() {
+    document.getElementById('joinError').style.display = 'none';
+  },
+
+  _getSavedNickname() {
+    return (localStorage.getItem(this.nicknameKey) || '').trim().slice(0, 24);
+  },
+
+  _getPostAuthorNickname() {
+    const localNickname = this._getSavedNickname();
+    if (localNickname) return localNickname;
+    const syncNickname = String(Sync.currentNickname || '').trim().slice(0, 24);
+    return syncNickname || 'Host';
+  },
+
+  // ── Sync Callbacks ────────────────────────────────────
+
+  _bindSyncCallbacks() {
+    Sync.onUpdate((boardData) => {
+      if (!BoardManager.currentBoard) return;
+      const board = BoardManager.currentBoard;
+      board.posts = boardData.posts || [];
+      board.background = boardData.background || board.background;
+      board.name = boardData.name || board.name;
+      document.getElementById('boardTitle').textContent = board.name;
+      this.applyBackground(board.background);
+      PostManager.renderAll(board, document.getElementById('canvas'));
+    });
+
+    Sync.onPresence((count) => {
+      document.getElementById('collabCount').textContent = count;
+      document.getElementById('shareCollabCount').textContent = count;
+    });
   },
 
   // ── New Board Modal ───────────────────────────────────
@@ -286,12 +464,16 @@ const App = {
         const rect = canvas.getBoundingClientRect();
         const x = Math.random() * Math.max(100, rect.width - 250) + 20;
         const y = Math.random() * Math.max(100, rect.height - 200) + 20;
-        const post = PostManager.createPost(title, content, color, x, y, 'Me');
+        const post = PostManager.createPost(
+          title, content, color, x, y,
+          this._getPostAuthorNickname()
+        );
         board.posts.push(post);
       }
 
       BoardManager.saveCurrentBoard();
       PostManager.renderAll(board, document.getElementById('canvas'));
+      if (Sync.currentRoomCode) Sync.pushUpdate(board);
       document.getElementById('postModal').style.display = 'none';
     };
 
@@ -302,6 +484,7 @@ const App = {
       board.posts = board.posts.filter(p => p.id !== PostManager.editingPostId);
       BoardManager.saveCurrentBoard();
       PostManager.renderAll(board, document.getElementById('canvas'));
+      if (Sync.currentRoomCode) Sync.pushUpdate(board);
       document.getElementById('postModal').style.display = 'none';
     };
   }

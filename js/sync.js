@@ -1,80 +1,175 @@
 /**
- * sync.js — Lightweight board sharing via URL-encoded data
- * No external services required — board data is embedded in the share link.
+ * sync.js — Real-time collaboration engine for Pinboard
+ * Uses Firebase Realtime Database for live sync across devices
  */
 
 const Sync = {
-  currentRoomCode: null,
+  db: null,
+  roomRef: null,
+  sessionId: null,
   currentNickname: 'Guest',
+  currentRoomCode: null,
   isHost: false,
+  onUpdateCallback: null,
+  onPresenceCallback: null,
 
-  async init() { return true; },
+  // ── Init ──────────────────────────────────────────────
 
-  // ── Encode board into a shareable URL fragment ───────
-  encodeBoard(board) {
-    const minimal = {
-      n: board.name,
-      bg: board.background,
-      l: board.layout,
-      p: (board.posts || []).map(p => ({
-        t: p.title,
-        c: p.content,
-        co: p.color,
-        x: Math.round(p.x),
-        y: Math.round(p.y),
-        a: p.author
-      }))
-    };
-    const json = JSON.stringify(minimal);
-    // Use base64url encoding
-    return btoa(unescape(encodeURIComponent(json)))
-      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  async init() {
+    if (!SYNC_ENABLED) return false;
+    try {
+      if (!firebase.apps.length) {
+        firebase.initializeApp(FIREBASE_CONFIG);
+      }
+      this.db = firebase.database();
+      this.sessionId = this.sessionId || Storage.uid();
+      console.log('[Sync] Firebase ready, session:', this.sessionId);
+      return true;
+    } catch (e) {
+      console.error('[Sync] Firebase init failed:', e);
+      return false;
+    }
   },
 
-  // ── Decode board from URL fragment ──────────────────
-  decodeBoard(encoded) {
+  // ── Host: Create a room ───────────────────────────────
+
+  async createRoom(board) {
+    if (!this.db) {
+      const ok = await this.init();
+      if (!ok) return null;
+    }
+    const code = this._genCode();
+    this.currentRoomCode = code;
+    this.isHost = true;
+
+    const roomData = {
+      code,
+      boardId: board.id,
+      hostId: this.sessionId,
+      board: this._serializeBoard(board),
+      createdAt: firebase.database.ServerValue.TIMESTAMP,
+      updatedAt: firebase.database.ServerValue.TIMESTAMP
+    };
+
     try {
-      // Restore standard base64
-      let b64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
-      while (b64.length % 4) b64 += '=';
-      const json = decodeURIComponent(escape(atob(b64)));
-      const d = JSON.parse(json);
-      return {
-        id: Storage.uid(),
-        name: d.n || 'Shared Board',
-        background: d.bg || '#f5f5f5',
-        layout: d.l || 'free',
-        posts: (d.p || []).map(p => ({
-          id: Storage.uid(),
-          title: p.t || '',
-          content: p.c || '',
-          color: p.co || '#fff9c4',
-          x: p.x || 0,
-          y: p.y || 0,
-          author: p.a || 'Unknown',
-          createdAt: Date.now()
-        })),
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      };
+      await this.db.ref(`rooms/${code}`).set(roomData);
+      this.roomRef = this.db.ref(`rooms/${code}`);
+      this._listenPresence(code);
+      this._listenBoardChanges(code);
+      console.log('[Sync] Room created:', code);
+      return code;
     } catch (e) {
-      console.error('[Sync] Failed to decode board:', e);
+      console.error('[Sync] createRoom failed:', e);
+      this.currentRoomCode = null;
+      this.isHost = false;
       return null;
     }
   },
 
-  // ── Generate share URL ─────────────────────────────
-  getShareUrl(board) {
-    const encoded = this.encodeBoard(board);
-    return `${window.location.origin}${window.location.pathname}?board=${encoded}`;
+  // ── Guest: Join a room ────────────────────────────────
+
+  async joinRoom(code, nickname = 'Guest') {
+    if (!this.db) {
+      const ok = await this.init();
+      if (!ok) return null;
+    }
+    try {
+      const snap = await this.db.ref(`rooms/${code}`).once('value');
+      if (!snap.exists()) {
+        console.warn('[Sync] Room not found:', code);
+        return null;
+      }
+      const roomData = snap.val();
+      this.currentNickname = this._sanitizeNickname(nickname);
+      this.currentRoomCode = code;
+      this.isHost = false;
+      this.roomRef = this.db.ref(`rooms/${code}`);
+      this._listenPresence(code);
+      this._listenBoardChanges(code);
+      console.log('[Sync] Joined room:', code);
+      return roomData.board;
+    } catch (e) {
+      console.error('[Sync] joinRoom failed:', e);
+      return null;
+    }
   },
 
-  // Stubs for compatibility
+  // ── Push board update ─────────────────────────────────
+
+  async pushUpdate(board) {
+    if (!this.roomRef) return;
+    try {
+      await this.roomRef.update({
+        board: this._serializeBoard(board),
+        updatedAt: firebase.database.ServerValue.TIMESTAMP,
+        lastEditBy: this.sessionId
+      });
+    } catch (e) {
+      console.warn('[Sync] Push failed:', e);
+    }
+  },
+
+  // ── Listen for remote changes ─────────────────────────
+
+  _listenBoardChanges(code) {
+    this.db.ref(`rooms/${code}/board`).on('value', (snap) => {
+      if (!snap.exists()) return;
+      const boardData = snap.val();
+      if (boardData._lastEditBy === this.sessionId) return;
+      if (this.onUpdateCallback) this.onUpdateCallback(boardData);
+    });
+  },
+
+  // ── Presence ──────────────────────────────────────────
+
+  _announcePresence(code) {
+    if (!this.db) return;
+    const myRef = this.db.ref(`rooms/${code}/presence/${this.sessionId}`);
+    myRef.set({
+      joinedAt: firebase.database.ServerValue.TIMESTAMP,
+      active: true,
+      nickname: this.currentNickname || 'Guest'
+    });
+    myRef.onDisconnect().remove();
+  },
+
+  _listenPresence(code) {
+    this._announcePresence(code);
+    this.db.ref(`rooms/${code}/presence`).on('value', (snap) => {
+      const count = snap.exists() ? Object.keys(snap.val()).length : 1;
+      if (this.onPresenceCallback) this.onPresenceCallback(count);
+    });
+  },
+
+  // ── Leave room ────────────────────────────────────────
+
   async leaveRoom() {
+    if (!this.db || !this.currentRoomCode) return;
+    try {
+      await this.db.ref(`rooms/${this.currentRoomCode}/presence/${this.sessionId}`).remove();
+      this.db.ref(`rooms/${this.currentRoomCode}/board`).off();
+      this.db.ref(`rooms/${this.currentRoomCode}/presence`).off();
+    } catch (e) {}
+    this.roomRef = null;
     this.currentRoomCode = null;
     this.isHost = false;
   },
-  async pushUpdate() {},
-  onUpdate() {},
-  onPresence() {}
+
+  // ── Helpers ───────────────────────────────────────────
+
+  _genCode() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  },
+
+  _serializeBoard(board) {
+    return JSON.parse(JSON.stringify({ ...board, _lastEditBy: this.sessionId }));
+  },
+
+  _sanitizeNickname(nickname) {
+    const clean = String(nickname || '').trim().slice(0, 24);
+    return clean || 'Guest';
+  },
+
+  onUpdate(cb)   { this.onUpdateCallback = cb; },
+  onPresence(cb) { this.onPresenceCallback = cb; }
 };
