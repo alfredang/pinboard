@@ -158,7 +158,7 @@
         <p class="modal-desc">Invite others to collaborate live on this board.</p>
         <button class="btn btn-pink btn-block" id="btnCreateRoom">Generate Join Code</button>
         <div class="sync-note" id="syncNote" style="display:none">
-          ⚠️ Set up Firebase in <code>js/config.js</code> to enable live sync.
+          ⚠️ Copy <code>js/config.example.js</code> → <code>js/config.js</code> and add your Firebase credentials to enable live sync.
           <a href="https://console.firebase.google.com" target="_blank">Get started →</a>
         </div>
       </div>
@@ -191,12 +191,12 @@
         <input type="text" id="joinNickname" placeholder="Your nickname" maxlength="24" autocomplete="nickname">
       </div>
       <div class="form-group">
-        <label>Room Code</label>
+        <label>Board Room Code</label>
         <input type="text" id="joinCode" placeholder="" maxlength="6"
                pattern="[0-9]*" inputmode="numeric" class="input-code">
       </div>
       <div id="joinError" class="error-msg" style="display:none">
-        ❌ Room not found. Check the code and try again.
+        ❌ Board room not found. Check the code and try again.
       </div>
       <div class="modal-actions">
         <button class="btn btn-outline" id="cancelJoin">Cancel</button>
@@ -211,7 +211,9 @@
   <!-- QR Code generator -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-  <script src="js/config.js"></script>
+  <script src="js/config.js"
+    onerror="window.FIREBASE_CONFIG={apiKey:'YOUR_API_KEY'};window.SYNC_ENABLED=false;console.warn('[Config] config.js not found — sync disabled')">
+  </script>
   <script src="js/storage.js"></script>
   <script src="js/sync.js"></script>
   <script src="js/board.js"></script>

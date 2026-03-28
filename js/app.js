@@ -158,11 +158,28 @@ const App = {
       const board = BoardManager.currentBoard;
       if (!board) return;
 
-      document.getElementById('btnCreateRoom').textContent = 'Creating room…';
-      document.getElementById('btnCreateRoom').disabled = true;
+      const btn = document.getElementById('btnCreateRoom');
+      btn.textContent = 'Creating room…';
+      btn.disabled = true;
+
+      // Ensure Firebase is initialized
+      if (!Sync.db) {
+        const ok = await Sync.init();
+        if (!ok) {
+          btn.textContent = 'Generate Join Code';
+          btn.disabled = false;
+          document.getElementById('syncNote').style.display = 'block';
+          return;
+        }
+      }
 
       const code = await Sync.createRoom(board);
-      if (!code) return;
+      if (!code) {
+        btn.textContent = 'Generate Join Code';
+        btn.disabled = false;
+        document.getElementById('syncNote').style.display = 'block';
+        return;
+      }
 
       this._showShareActive(code);
     };
@@ -241,7 +258,7 @@ const App = {
         return;
       }
       if (code.length !== 6) {
-        this._showJoinError('Please enter a valid 6-digit room code.');
+        this._showJoinError('Please enter a valid 6-digit board room code.');
         btn.textContent = 'Join Board';
         btn.disabled = false;
         return;
@@ -300,7 +317,7 @@ const App = {
     const boardData = await Sync.joinRoom(code, cleanNickname);
     if (!boardData) {
       document.getElementById('joinModal').style.display = 'flex';
-      this._showJoinError('Room not found. Check the code and try again.');
+      this._showJoinError('Board room not found. Check the code and try again.');
       return;
     }
     localStorage.setItem(this.nicknameKey, cleanNickname);
