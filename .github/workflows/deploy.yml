@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Inject Firebase API key
-        run: sed -i 's/__FIREBASE_API_KEY__/${{ secrets.FIREBASE_API_KEY }}/' index.html
+        run: sed -i "s|__FIREBASE_API_KEY__|${{ secrets.FIREBASE_API_KEY }}|" index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
