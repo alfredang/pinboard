@@ -13,3 +13,14 @@ Thumbs.db
 
 # Node
 node_modules/
+
+# Distribution archives (rebuildable — never pushed to GitHub)
+*.zip
+
+# Local agent skill installs (dev tooling, not app code)
+.agents/
+.claude/skills/
+skills-lock.json
+
+# Playwright MCP artifacts
+.playwright-mcp/

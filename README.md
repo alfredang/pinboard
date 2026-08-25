@@ -19,7 +19,7 @@
 
 ## Screenshot
 
-![Pinboard Screenshot](pinboard-preview.png)
+![Pinboard Screenshot](pinboard-colorful.png)
 
 > 🌐 **[Try it live →](https://alfredang.github.io/pinboard/)**
 
@@ -35,7 +35,7 @@
 |---------|-------------|
 | 🗂 **Multiple Boards** | Create, name, and manage unlimited boards |
 | 🖱 **Drag & Drop** | Freely move sticky notes around the canvas |
-| 🎨 **Colorful Posts** | 7 pastel color options per sticky note |
+| 🎨 **Colorful Posts** | 7 vibrant sticky-note colors with playful tilt effects |
 | 🔗 **Real-time Collaboration** | Live sync via Firebase with room codes and QR sharing |
 | 👤 **Nicknamed Authors** | Guests join with a nickname, shown on each post |
 | 🖼 **Board Backgrounds** | Solid colors, dot grid, and line grid patterns |
@@ -44,7 +44,7 @@
 | 📱 **Mobile Ready** | Touch drag-and-drop, fully responsive |
 | ✏️ **Edit & Delete** | Hover to reveal edit icon overlay |
 | 👁 **Board Previews** | Mini-preview cards on the home screen |
-| 🌙 **Dark / Light Theme** | Toggle between themes with smooth transitions |
+| 🌙 **Light-first Theme** | Bright, colorful light design by default with an optional dark mode |
 | 🎉 **Celebrate Button** | Balloons animation + trumpet fanfare to mark collaboration milestones |
 
 ---
@@ -55,13 +55,13 @@
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES2024-F7DF1E?logo=javascript&logoColor=black)
 ![Firebase](https://img.shields.io/badge/Firebase-RTDB-FFCA28?logo=firebase&logoColor=black)
-![Google Fonts](https://img.shields.io/badge/Fonts-Fraunces%20%2B%20DM%20Sans-4285F4?logo=googlefonts&logoColor=white)
+![Google Fonts](https://img.shields.io/badge/Fonts-Baloo%202%20%2B%20Nunito-4285F4?logo=googlefonts&logoColor=white)
 ![GitHub Pages](https://img.shields.io/badge/Hosting-GitHub%20Pages-181717?logo=github&logoColor=white)
 
 | Layer | Technology |
 |-------|-----------|
 | **Frontend** | HTML5, CSS3, Vanilla JavaScript (ES6+) |
-| **Typography** | Fraunces + DM Sans (Google Fonts) |
+| **Typography** | Baloo 2 + Nunito (Google Fonts) |
 | **Real-time Sync** | Firebase Realtime Database |
 | **Storage** | Browser LocalStorage API |
 | **Layout** | CSS Grid, Flexbox |
@@ -108,9 +108,8 @@ graph TB
 pinboard/
 ├── index.html                  # App shell, modals, toolbar
 ├── css/
-│   └── style.css               # All UI styles, animations, responsive
+│   └── style.css               # Colorful light-first design system, animations, responsive
 ├── js/
-│   ├── config.js               # Firebase configuration
 │   ├── storage.js              # LocalStorage CRUD helpers
 │   ├── sync.js                 # Real-time collaboration (Firebase RTDB)
 │   ├── board.js                # Board creation, rendering, management

@@ -381,6 +381,9 @@ const App = {
         opt.classList.add('selected');
         this.selectedLayout = opt.dataset.layout;
       };
+      opt.onkeydown = (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); opt.click(); }
+      };
     });
     document.getElementById('confirmNewBoard').onclick = () => {
       const name = document.getElementById('newBoardName').value.trim() || 'Untitled Board';

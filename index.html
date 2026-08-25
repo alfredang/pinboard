@@ -5,10 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="A collaborative digital canvas for whiteboards, lessons, and activities.">
   <title>Pinboard — Digital Canvas</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📌</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=5">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=6">
 </head>
 <body>
 
@@ -17,7 +18,18 @@
     <!-- Navbar -->
     <nav class="navbar">
       <div class="nav-brand">
-        <span class="nav-logo">📌</span>
+        <span class="nav-logo">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="pinGrad" x1="0" y1="0" x2="24" y2="24">
+                <stop offset="0%" stop-color="#6366f1"/>
+                <stop offset="55%" stop-color="#ec4899"/>
+                <stop offset="100%" stop-color="#fb923c"/>
+              </linearGradient>
+            </defs>
+            <path fill="url(#pinGrad)" d="M14.6 2.2a1.5 1.5 0 0 1 2.2.1l4.9 4.9a1.5 1.5 0 0 1 .1 2.2l-.9.9a1.5 1.5 0 0 1-1.6.4l-3.3 3.3.4 2.6a1.5 1.5 0 0 1-.4 1.3l-.7.7a1 1 0 0 1-1.4 0l-3.5-3.5-5.2 5.2a1 1 0 0 1-1.4-1.4l5.2-5.2-3.5-3.5a1 1 0 0 1 0-1.4l.7-.7a1.5 1.5 0 0 1 1.3-.4l2.6.4 3.3-3.3a1.5 1.5 0 0 1 .4-1.6l.8-1Z"/>
+          </svg>
+        </span>
         <span class="nav-title">Pinboard</span>
       </div>
       <div class="nav-actions">
@@ -38,13 +50,18 @@
     <!-- Home Screen -->
     <div id="homeScreen" class="screen active">
       <div class="home-hero">
-        <h1>Digital canvases for<br>whiteboards &amp; activities</h1>
-        <p>Post sticky notes, collaborate live, and build visual boards together.</p>
+        <span class="hero-note hero-note-1" aria-hidden="true"></span>
+        <span class="hero-note hero-note-2" aria-hidden="true"></span>
+        <span class="hero-note hero-note-3" aria-hidden="true"></span>
+        <span class="hero-note hero-note-4" aria-hidden="true"></span>
+        <h1>Colorful canvases for<br><span class="hero-highlight">whiteboards</span> &amp; activities</h1>
+        <p>Post sticky notes, collaborate live, and build joyful visual boards together.</p>
         <div class="hero-actions">
           <button class="btn btn-pink btn-lg" id="heroMakeBoard">Make a board</button>
           <button class="btn btn-outline btn-lg" id="heroJoin">Join a board</button>
         </div>
       </div>
+      <h2 class="boards-heading">Your boards</h2>
       <div class="boards-grid" id="boardsGrid"></div>
     </div>
 
@@ -60,8 +77,13 @@
             <span class="collab-dot"></span>
             <span id="collabCount">1</span> online
           </div>
-          <button class="btn btn-ghost" title="Share board" id="btnShare">🔗 Share</button>
-          <button class="btn btn-ghost" title="Change background" id="btnBg">🎨</button>
+          <button class="btn btn-ghost" title="Share board" id="btnShare">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
+            Share
+          </button>
+          <button class="btn btn-ghost" title="Change background" aria-label="Change background" id="btnBg">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22a10 10 0 1 1 10-10c0 1.7-1.3 3-3 3h-2.2a2.3 2.3 0 0 0-1.7 3.8c.4.4.6 1 .6 1.5A1.7 1.7 0 0 1 12 22Z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="12" cy="7.5" r="1"/><circle cx="16.5" cy="10.5" r="1"/></svg>
+          </button>
           <button class="btn btn-celebrate btn-sm" id="btnCelebrate" title="Celebrate the end of collaboration!">
             <span class="celebrate-icon">🎉</span> Celebrate!
           </button>
@@ -112,16 +134,22 @@
       <div class="form-group">
         <label>Layout</label>
         <div class="layout-options">
-          <div class="layout-opt selected" data-layout="free">
-            <div class="layout-icon">⬜⬜<br>⬜⬜</div>
+          <div class="layout-opt selected" data-layout="free" role="button" tabindex="0" aria-label="Free layout">
+            <div class="layout-icon">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="8" height="8" rx="2" transform="rotate(-6 7 8)"/><rect x="13" y="11" width="8" height="8" rx="2" transform="rotate(7 17 15)"/></svg>
+            </div>
             <span>Free</span>
           </div>
-          <div class="layout-opt" data-layout="grid">
-            <div class="layout-icon">▦</div>
+          <div class="layout-opt" data-layout="grid" role="button" tabindex="0" aria-label="Grid layout">
+            <div class="layout-icon">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>
+            </div>
             <span>Grid</span>
           </div>
-          <div class="layout-opt" data-layout="list">
-            <div class="layout-icon">☰</div>
+          <div class="layout-opt" data-layout="list" role="button" tabindex="0" aria-label="List layout">
+            <div class="layout-icon">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="4.5" rx="2"/><rect x="3" y="11" width="18" height="4.5" rx="2"/><rect x="3" y="18" width="18" height="3" rx="1.5"/></svg>
+            </div>
             <span>List</span>
           </div>
         </div>
@@ -148,13 +176,13 @@
       <div class="form-group">
         <label>Color</label>
         <div class="color-swatches" id="colorSwatches">
-          <div class="color-swatch selected" data-color="#fff9c4" style="background:#fff9c4"></div>
-          <div class="color-swatch" data-color="#f8bbd9" style="background:#f8bbd9"></div>
-          <div class="color-swatch" data-color="#bbdefb" style="background:#bbdefb"></div>
-          <div class="color-swatch" data-color="#c8e6c9" style="background:#c8e6c9"></div>
-          <div class="color-swatch" data-color="#ffe0b2" style="background:#ffe0b2"></div>
-          <div class="color-swatch" data-color="#e1bee7" style="background:#e1bee7"></div>
-          <div class="color-swatch" data-color="#ffffff" style="background:#ffffff"></div>
+          <div class="color-swatch selected" data-color="#fff176" style="background:#fff176" title="Sunshine yellow"></div>
+          <div class="color-swatch" data-color="#ff9ec7" style="background:#ff9ec7" title="Bubblegum pink"></div>
+          <div class="color-swatch" data-color="#90caf9" style="background:#90caf9" title="Sky blue"></div>
+          <div class="color-swatch" data-color="#a5e8b0" style="background:#a5e8b0" title="Mint green"></div>
+          <div class="color-swatch" data-color="#ffcc80" style="background:#ffcc80" title="Tangerine"></div>
+          <div class="color-swatch" data-color="#ce93d8" style="background:#ce93d8" title="Lavender"></div>
+          <div class="color-swatch" data-color="#ffffff" style="background:#ffffff" title="White"></div>
         </div>
       </div>
       <div class="modal-actions">
@@ -168,7 +196,7 @@
   <!-- Share Modal -->
   <div class="modal-overlay" id="shareModal" style="display:none">
     <div class="modal modal-share">
-      <h3>🔗 Share Board</h3>
+      <h3>Share board</h3>
       <div id="shareSetup">
         <p class="modal-desc">Invite others to collaborate live on this board.</p>
         <button class="btn btn-pink btn-block" id="btnCreateRoom">Generate Join Code</button>
@@ -195,7 +223,7 @@
   <!-- Join Modal -->
   <div class="modal-overlay" id="joinModal" style="display:none">
     <div class="modal">
-      <h3>🚪 Join a Board</h3>
+      <h3>Join a board</h3>
       <p class="modal-desc">Add your nickname and the 6-digit code.</p>
       <div class="form-group">
         <label>Nickname</label>
@@ -246,8 +274,9 @@
     // Theme toggle
     (function() {
       const btn = document.getElementById('btnTheme');
+      // Light-first: default to the colorful light theme unless the user chose dark
       const saved = localStorage.getItem('pinboard_theme');
-      if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      if (saved === 'dark') {
         document.documentElement.setAttribute('data-theme', 'dark');
       }
       btn.onclick = () => {

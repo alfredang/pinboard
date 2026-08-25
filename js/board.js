@@ -78,7 +78,7 @@ const BoardManager = {
       { left: '30px', top: '65px' },
       { left: '110px', top: '60px' },
     ];
-    const colors = ['#fff9c4', '#f8bbd9', '#bbdefb', '#c8e6c9', '#ffe0b2'];
+    const colors = ['#fff176', '#ff9ec7', '#90caf9', '#a5e8b0', '#ffcc80'];
     return board.posts.slice(0, 4).map((post, i) => {
       const pos = positions[i] || { left: `${i * 40}px`, top: `${i * 20}px` };
       const color = post.color || colors[i % colors.length];
